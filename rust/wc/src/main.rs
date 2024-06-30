@@ -1,15 +1,18 @@
-use clap::Parser;
+use std::env;
 
-/// Print newline, word, and byte counts for the given file,
-/// or read from stdin if no file is specified.
-#[derive(Parser)]
-struct MyArgs {
-    /// Print the number of bytes
-    #[arg(short)]
-    c: (),
+#[derive(Debug)]
+struct Args {
+    bytes: bool,
 }
 
 fn main() {
-    let _args = MyArgs::parse();
-    println!("Hello, world!");
+    let mut args = Args { bytes: false };
+
+    for arg in env::args() {
+        if arg == "-c" {
+            args.bytes = true;
+        }
+    }
+
+    println!("{args:?}");
 }
