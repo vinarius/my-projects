@@ -6,7 +6,8 @@ def main():
     args = parse_args()
     output = build_output(args)
 
-    print(output)
+    if output:
+        print(output)
 
 
 if __name__ == "__main__":
