@@ -47,15 +47,43 @@ async function main() {
       isOutputtingAtLeastTwoOptions || useDefaultOptions;
     let output = "";
 
-    if (addSpacingToOutput) output += " ";
-
     const pushToOutput = (val: string) => {
       addSpacingToOutput ? (output += ` ${val}`) : (output += val);
     };
 
+    const countLines = () => {
+      const lineCount = data.split(/\r\n|\r|\n/).length - 1;
+
+      if (addSpacingToOutput) {
+        // weird behavior from wc
+        pushToOutput(` ${lineCount.toString()} `);
+      } else {
+        pushToOutput(lineCount.toString());
+      }
+    };
+
+    const countWords = () => {
+      const words = data.split(/\s+/);
+      let wordCount = words.length;
+
+      if (wordCount > 0) wordCount--;
+
+      pushToOutput(wordCount.toString());
+    };
+
+    const countCharacters = () => {
+      const characterCount = data.split("").length;
+      pushToOutput(characterCount.toString());
+    };
+
+    const countBytes = () => {
+      const byteCount = Buffer.byteLength(data);
+      pushToOutput(byteCount.toString());
+    };
+
     // TODO: read in chunks rather than entire file
     const data = filePath
-      ? readFileSync(filePath).toString()
+      ? (readFile(filePath) as string)
       : ((await new Promise((resolve) => {
           process.stdin.resume();
           process.stdin.setEncoding("utf8");
@@ -64,22 +92,14 @@ async function main() {
 
     process.stdin.pause();
 
-    if (lines) {
-      const lineCount = data.split(/\r\n|\r|\n/).length - 1;
-      pushToOutput(lineCount.toString());
-    }
-
-    if (bytes) {
-      const byteCount = Buffer.byteLength(data);
-      pushToOutput(byteCount.toString());
-    }
-
-    if (words) {
-      console.log("TODO: words");
-    }
-
-    if (characters) {
-      console.log("TODO: characteres");
+    if (lines) countLines();
+    if (words) countWords();
+    if (characters) countCharacters();
+    if (bytes) countBytes();
+    if (useDefaultOptions) {
+      countLines();
+      countWords();
+      countBytes();
     }
 
     if (filePath) {
@@ -94,3 +114,15 @@ async function main() {
 }
 
 if (require.main === module) void main();
+
+function readFile(filePath: string) {
+  try {
+    return readFileSync(filePath).toString();
+  } catch (err) {
+    if (err instanceof Error && "code" in err) {
+      if (err.code === "ENOENT") throw `File not found: ${filePath}`;
+    } else {
+      throw err;
+    }
+  }
+}
