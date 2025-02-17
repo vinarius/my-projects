@@ -123,16 +123,35 @@ fn handle_type_command(mut options: std::str::SplitWhitespace) -> Result<(), io:
     let path_split_by_directories = path.split(':');
 
     for directory in path_split_by_directories {
-        let path = Path::new(directory);
+        // let path = Path::new(directory);
 
-        if !path.is_dir() {
-            continue;
-        }
+        // if !path.is_dir() {
+        //     if path.
 
-        fs::read_dir(path)
+        //     continue;
+        // }
+
+        // fs::read_dir(path)
+        recurse_directory(directory);
     }
 
     println!("{command_option_raw}: not found");
 
     Ok(())
+}
+
+fn recurse_directory(directory: &str, command: &str) -> Option<&str> {
+    let path = Path::new(directory);
+
+    if path.is_file() {
+        if directory == command {
+            Some(directory);
+        }
+
+        return None;
+    }
+
+    if let Ok(read_dir) = fs::read_dir(path) {
+        recurse_directory(read_dir.min_by_key(), command);
+    }
 }
