@@ -64,7 +64,7 @@ fn main() {
                 continue;
             }
             BuiltInCommand::Type => {
-                handle_type_command(options);
+                let _ = handle_type_command(options);
                 continue;
             }
         }
@@ -117,22 +117,16 @@ fn handle_type_command(mut options: std::str::SplitWhitespace) -> Result<(), io:
     }
 
     let path = path_maybe.unwrap();
-
-    println!("path: {path:#?}");
-
     let path_split_by_directories = path.split(':');
 
     for directory in path_split_by_directories {
-        // let path = Path::new(directory);
+        if let Some(found_command) =
+            check_directory_if_command_exists(directory, command_option_raw)
+        {
+            println!("{found_command}");
 
-        // if !path.is_dir() {
-        //     if path.
-
-        //     continue;
-        // }
-
-        // fs::read_dir(path)
-        recurse_directory(directory);
+            return Ok(());
+        }
     }
 
     println!("{command_option_raw}: not found");
@@ -140,18 +134,32 @@ fn handle_type_command(mut options: std::str::SplitWhitespace) -> Result<(), io:
     Ok(())
 }
 
-fn recurse_directory(directory: &str, command: &str) -> Option<&str> {
+fn check_directory_if_command_exists<'a>(directory: &'a str, command: &'a str) -> Option<String> {
     let path = Path::new(directory);
 
-    if path.is_file() {
-        if directory == command {
-            Some(directory);
+    if !path.exists() {
+        return None;
+    }
+
+    if path.is_dir() {
+        println!("path: {path:?}");
+
+        for entry in fs::read_dir(path).expect("unable to read entries from directory") {
+            let entry = entry.unwrap();
+            let entry = entry.path();
+            let entry = entry.to_str().unwrap();
+
+            if let Some(found_command) = check_directory_if_command_exists(entry, command) {
+                return Some(found_command);
+            }
         }
 
         return None;
     }
 
-    if let Ok(read_dir) = fs::read_dir(path) {
-        recurse_directory(read_dir.min_by_key(), command);
+    if directory == command {
+        return Some(String::from(directory));
     }
+
+    None
 }
