@@ -1,6 +1,6 @@
 use std::env;
 use std::io::{self, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::{process, str::FromStr};
 
 enum BuiltInCommand {
@@ -36,23 +36,22 @@ fn main() {
 
         let mut input_split_whitespace_iter = input.split_whitespace();
         let command_maybe = input_split_whitespace_iter.next();
+        let options = input_split_whitespace_iter;
 
         if command_maybe.is_none() {
             continue;
         }
 
         let command_raw = command_maybe.unwrap();
-        let command_parsed_maybe = command_raw.parse::<BuiltInCommand>();
+        let command_parsed_into_builtin_maybe = command_raw.parse::<BuiltInCommand>();
 
-        if command_parsed_maybe.is_err() {
-            println!("{}: command not found", command_raw);
+        if command_parsed_into_builtin_maybe.is_err() {
+            run_external_program(command_raw, options);
             continue;
         }
 
-        let command_parsed =
-            command_parsed_maybe.expect("expected to unwrap successfully parsed command");
-
-        let options = input_split_whitespace_iter;
+        let command_parsed = command_parsed_into_builtin_maybe
+            .expect("expected to unwrap successfully parsed command");
 
         match command_parsed {
             BuiltInCommand::Echo => {
@@ -108,25 +107,52 @@ fn handle_type_command(mut options: std::str::SplitWhitespace) {
         return;
     }
 
+    let command_path_maybe = get_command_path(command_option_raw);
+
+    if command_path_maybe.is_none() {
+        println!("{command_option_raw}: not found");
+        return;
+    }
+
+    let command_path = command_path_maybe.unwrap();
+
+    println!("{}", command_path.display());
+}
+
+fn run_external_program(command: &str, _options: std::str::SplitWhitespace) {
+    let command_path_maybe = get_command_path(command);
+
+    if command_path_maybe.is_none() {
+        println!("{command}: not found");
+        return;
+    }
+
+    // command is valid, not builtin, and in PATH
+
+    let _command_path = command_path_maybe.unwrap();
+
+    todo!("spawn a child process");
+}
+
+fn get_command_path(command: &str) -> Option<PathBuf> {
     let path_maybe = env::var("PATH");
 
     if let Err(error) = path_maybe {
         eprintln!("{error}");
 
-        return;
+        return None;
     }
 
     let path = path_maybe.unwrap();
     let path_split_by_directories = path.split(':');
 
     for directory in path_split_by_directories {
-        let program_path = Path::new(directory).join(command_option_raw);
+        let command_path = Path::new(directory).join(command);
 
-        if program_path.exists() {
-            println!("{}", program_path.display());
-            return;
+        if command_path.exists() {
+            return Some(command_path);
         }
     }
 
-    println!("{command_option_raw}: not found");
+    None
 }
