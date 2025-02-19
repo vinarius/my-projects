@@ -1,6 +1,6 @@
+use std::env;
 use std::io::{self, Write};
 use std::path::Path;
-use std::{env, fs};
 use std::{process, str::FromStr};
 
 enum BuiltInCommand {
@@ -64,7 +64,7 @@ fn main() {
                 continue;
             }
             BuiltInCommand::Type => {
-                let _ = handle_type_command(options);
+                handle_type_command(options);
                 continue;
             }
         }
@@ -92,11 +92,11 @@ fn handle_exit_command(mut options: std::str::SplitWhitespace) {
     }
 }
 
-fn handle_type_command(mut options: std::str::SplitWhitespace) -> Result<(), io::Error> {
+fn handle_type_command(mut options: std::str::SplitWhitespace) {
     let command_option_maybe = options.next();
 
     if command_option_maybe.is_none() {
-        return Ok(());
+        return;
     }
 
     let command_option_raw = command_option_maybe.expect("could not unwrap command option");
@@ -105,7 +105,7 @@ fn handle_type_command(mut options: std::str::SplitWhitespace) -> Result<(), io:
     if command_option_parsed.is_ok() {
         println!("{command_option_raw} is a shell builtin");
 
-        return Ok(());
+        return;
     }
 
     let path_maybe = env::var("PATH");
@@ -113,53 +113,20 @@ fn handle_type_command(mut options: std::str::SplitWhitespace) -> Result<(), io:
     if let Err(error) = path_maybe {
         eprintln!("{error}");
 
-        return Ok(());
+        return;
     }
 
     let path = path_maybe.unwrap();
     let path_split_by_directories = path.split(':');
 
     for directory in path_split_by_directories {
-        if let Some(found_command) =
-            check_directory_if_command_exists(directory, command_option_raw)
-        {
-            println!("{found_command}");
+        let program_path = Path::new(directory).join(command_option_raw);
 
-            return Ok(());
+        if program_path.exists() {
+            println!("{}", program_path.display());
+            return;
         }
     }
 
     println!("{command_option_raw}: not found");
-
-    Ok(())
-}
-
-fn check_directory_if_command_exists<'a>(directory: &'a str, command: &'a str) -> Option<String> {
-    let path = Path::new(directory);
-
-    if !path.exists() {
-        return None;
-    }
-
-    if path.is_dir() {
-        println!("path: {path:?}");
-
-        for entry in fs::read_dir(path).expect("unable to read entries from directory") {
-            let entry = entry.unwrap();
-            let entry = entry.path();
-            let entry = entry.to_str().unwrap();
-
-            if let Some(found_command) = check_directory_if_command_exists(entry, command) {
-                return Some(found_command);
-            }
-        }
-
-        return None;
-    }
-
-    if directory == command {
-        return Some(String::from(directory));
-    }
-
-    None
 }
