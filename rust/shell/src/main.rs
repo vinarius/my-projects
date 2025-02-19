@@ -92,25 +92,25 @@ fn handle_exit_command(mut options: std::str::SplitWhitespace) {
 }
 
 fn handle_type_command(mut options: std::str::SplitWhitespace) {
-    let command_option_maybe = options.next();
+    let command_maybe = options.next();
 
-    if command_option_maybe.is_none() {
+    if command_maybe.is_none() {
         return;
     }
 
-    let command_option_raw = command_option_maybe.expect("could not unwrap command option");
-    let command_option_parsed = command_option_raw.parse::<BuiltInCommand>();
+    let command_raw = command_maybe.expect("could not unwrap command option");
+    let command_parsed = command_raw.parse::<BuiltInCommand>();
 
-    if command_option_parsed.is_ok() {
-        println!("{command_option_raw} is a shell builtin");
+    if command_parsed.is_ok() {
+        println!("{command_raw} is a shell builtin");
 
         return;
     }
 
-    let command_path_maybe = get_command_path(command_option_raw);
+    let command_path_maybe = get_command_path(command_raw);
 
     if command_path_maybe.is_none() {
-        println!("{command_option_raw}: not found");
+        println!("{command_raw}: not found");
         return;
     }
 
