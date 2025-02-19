@@ -46,7 +46,7 @@ fn main() {
         let command_parsed_into_builtin_maybe = command_raw.parse::<BuiltInCommand>();
 
         if command_parsed_into_builtin_maybe.is_err() {
-            run_external_program(command_raw, options);
+            try_external_program(command_raw, options);
             continue;
         }
 
@@ -119,7 +119,7 @@ fn handle_type_command(mut options: std::str::SplitWhitespace) {
     println!("{}", command_path.display());
 }
 
-fn run_external_program(command: &str, _options: std::str::SplitWhitespace) {
+fn try_external_program(command: &str, _options: std::str::SplitWhitespace) {
     let command_path_maybe = get_command_path(command);
 
     if command_path_maybe.is_none() {
