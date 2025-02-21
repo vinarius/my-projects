@@ -29,7 +29,7 @@ pub fn get_command_path(command: &str) -> Option<PathBuf> {
     None
 }
 
-pub fn try_external_program(command: &str, _options: std::str::SplitWhitespace) -> Result<()> {
+pub fn try_external_program(command: &str, args: std::str::SplitWhitespace) -> Result<()> {
     let command_path_maybe = get_command_path(command);
 
     if command_path_maybe.is_none() {
@@ -38,7 +38,9 @@ pub fn try_external_program(command: &str, _options: std::str::SplitWhitespace) 
     }
 
     let command_path = command_path_maybe.unwrap();
-    let child = Command::new(command_path).spawn()?;
+    let child = Command::new(command_path.file_name().unwrap())
+        .args(args)
+        .spawn()?;
     let _ = child.wait_with_output();
 
     Ok(())
