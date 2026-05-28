@@ -1,0 +1,12 @@
+[package]
+name = "key-click-v2"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+enigo = "0.6.1"
+evdev = "0.13.2"
+gtk = { version = "0.11.3", package = "gtk4" }
+serde = { version = "1.0.228", features = ["derive"] }
+toml = "1.1.2"
+x11rb = { version = "0.13.2", features = ["all-extensions"] }
